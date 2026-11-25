@@ -9,7 +9,7 @@
 ## 快速开始
 
 ```bash
-git clone https://github.com/Rebines/semantic-cache-pool
+git clone https://github.com/rebinelee/semantic-cache-pool
 cd semantic-cache-pool
 bash start-cache.sh
 ```
