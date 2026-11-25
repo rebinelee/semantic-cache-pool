@@ -9,8 +9,8 @@
 ## 快速开始
 
 ```bash
-git clone https://github.com/Rebines/yachiyo-cache-pool
-cd yachiyo-cache-pool
+git clone https://github.com/Rebines/semantic-cache-pool
+cd semantic-cache-pool
 bash start-cache.sh
 ```
 

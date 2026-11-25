@@ -237,7 +237,7 @@ def build_forward_headers(headers: dict, body: dict) -> dict:
     forward = {
         "Content-Type": "application/json",
         "Authorization": auth,
-        "User-Agent": _header(headers, "User-Agent", "yachiyo-cache-pool/1.0"),
+        "User-Agent": _header(headers, "User-Agent", "semantic-cache-pool/1.0"),
     }
     for k, v in headers.items():
         if k.lower().startswith("x-opencode-"):
