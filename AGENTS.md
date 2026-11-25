@@ -1,0 +1,1 @@
+make sure that you have read CLAUDE.md

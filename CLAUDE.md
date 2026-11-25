@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## 项目概览
 
-Yachiyo's Cache Pool：一个 OpenAI 兼容的**语义缓存代理**。请求打到本地代理（默认 18791），命中缓存直接返回（usage 计 0 token），未命中透传到上游 LLM API 并自动缓存。仓库没有测试、没有 linter，验证靠手动跑 CLI 和 curl。
+Semantic Cache Pool：一个 OpenAI 兼容的**语义缓存代理**。请求打到本地代理（默认 18791），命中缓存直接返回（usage 计 0 token），未命中透传到上游 LLM API 并自动缓存。仓库没有测试、没有 linter，验证靠手动跑 CLI 和 curl。
 
 ## 常用命令
 
@@ -86,8 +86,25 @@ tail -f /tmp/cache_proxy.log        # 代理日志
 - `cache_hit.log`：HIT/MISS 结构化行，超过 5MB 自动改名为 `cache_hit.log.old`（覆盖旧的）。`log_hit` 里 query 截 120 字符，超长会附完整 repr。
 - 过期判断：exact/tool 路径用每条自己的 `ttl_seconds`；语义搜索的扫描窗口用全局 `DEFAULT_TTL`，两者不一致（个别条目可能在自己 TTL 过期后仍被语义命中），改动前先确认这是不是预期。
 
-## 代码约定
+## 代码与文件规范
 
-- 注释、日志、CLI 输出用中文 + emoji；响应/日志文本是面向用户的门面，改动时保持风格。
+### 文本风格
+
+- 注释、日志、CLI 输出、文档一律使用中文（代码标识符和协议字段保持英文）。
+- 不使用装饰性 emoji。需要表示状态时用纯文本标记，例如 `[OK]`、`[WARN]`、`[ERROR]`。
+- 历史代码中的 emoji 可逐步清理；新增或修改的代码不要继续添加。
+- 面向用户的响应/日志保持简洁，不堆砌修饰语。
+
+### 文件命名与组织
+
+- Python 模块用 snake_case（`cache_pool.py`、`cache_proxy.py`）；Shell 脚本用 kebab-case（`start-cache.sh`、`enable-proxy.sh`）；配置用 `config.yaml`；文档用 `README.md`、`CLAUDE.md`、`AGENTS.md`。
+- 不在仓库根目录新增临时脚本或一次性文件。确需保留的辅助脚本要放进对应目录，并在 `README.md` 的“项目文件”表中登记。
+- `README.md` 的“项目文件”表必须覆盖仓库根目录下所有脚本、模块和配置；增删文件时同步更新。
+- 运行时生成物不提交：`cache.db`、`cache_hit.log`、`models/*.gguf`、`bin/`、`__pycache__/`。新增生成物时同步补充 `.gitignore`。
+- 命令、配置项、端口、文件结构发生变化时，同步更新 `README.md` 和本文件的对应说明。
+- 提交信息用中文，格式为 `类型: 摘要`（例如 `修复: 流式响应缓存拼接`），不使用 emoji。
+
+### 实现约定
+
 - 缓存写入失败永远不能影响请求转发——`_try_cache_response` 与调用处都吞异常（当前 `store_tool` 抛 `ValueError` 也在上层被捕获）。新增缓存逻辑时保持这个边界。
 - `cache_proxy.py` 的 Flask 以 `threaded=True` 运行，模块级 `_tool_cache_loop_guard` 字典没有加锁，改动并发相关逻辑时要考虑这一点。

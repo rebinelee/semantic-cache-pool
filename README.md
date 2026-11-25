@@ -1,6 +1,6 @@
-# 🐙 ヤチヨのキャッシュプール～☆
+# Semantic Cache Pool
 
-> Yachiyo's Local Semantic Cache Proxy
+> OpenAI-compatible semantic cache proxy
 
 开包即用的语义缓存代理层。克隆下来一行命令就能跑。
 
@@ -15,11 +15,12 @@ bash start-cache.sh
 ```
 
 启动脚本会自动：
-1. ✅ 安装 Python 依赖（Flask + requests）
-2. ✅ 检测 NVIDIA GPU/CUDA，下载对应架构的 llama.cpp（CPU 或 CUDA 版）
-3. ✅ 下载 embeddinggemma Q8_0 模型（~314MB，或使用自定义 GGUF）
-4. ✅ 启动 embedding server（端口 8080）
-5. ✅ 启动缓存代理（端口 18791）
+
+1. 安装 Python 依赖（Flask + requests）
+2. 检测 NVIDIA GPU/CUDA，下载对应架构的 llama.cpp（CPU 或 CUDA 版）
+3. 下载 embeddinggemma Q8_0 模型（~314MB，或使用自定义 GGUF）
+4. 启动 embedding server（端口 8080）
+5. 启动缓存代理（端口 18791）
 
 全部一行搞定，无需手动配置。
 
@@ -29,8 +30,8 @@ bash start-cache.sh
 请求 → cache_proxy (localhost:18791)
            ↓
     语义缓存 (embeddinggemma + llama.cpp + SQLite)
-           ↓  ┌─────────────────────────────┐
-    命中？ → 是 → 0 tokens 返回 ✅
+           ↓
+    命中？ → 是 → 0 tokens 返回
            ↓ 否
     转发 LLM API → 自动缓存 → 返回
 ```
@@ -45,18 +46,23 @@ bash cache.sh put "Q" "A"     # 手动存入
 bash cache.sh clean           # 清理过期
 ```
 
-## 文件说明
+## 项目文件
 
 | 文件 | 说明 |
 |:----|:-----|
-| `start-cache.sh` | 一键启动脚本（自动下载所有依赖） |
-| `cache_pool.py` | 核心库：embedding + SQLite + 搜索/存储 |
-| `cache_proxy.py` | HTTP 代理服务器（Flask，OpenAI 兼容） |
-| `cache.sh` | 手动操作 CLI |
+| `start-cache.sh` | 一键启动：安装依赖、检测 CUDA、下载 llama.cpp 与模型、启动 embedding 服务和代理 |
+| `enable-proxy.sh` | 仅启动代理（embedding 服务需已在运行） |
+| `cache.sh` | 手动操作 CLI：stats / search / put / clean / demo |
+| `cache_pool.py` | 核心库：embedding、SQLite 读写、精确/语义/工具缓存 |
+| `cache_proxy.py` | OpenAI 兼容 HTTP 代理（Flask） |
+| `config.yaml` | 运行配置 |
 | `requirements.txt` | Python 依赖 |
-| `models/` | 自动下载的 GGUF 模型放这里 |
-| `bin/` | 自动下载的 llama-server 二进制放这里 |
-| `cache_hit.log` | 命中/未命中日志（自动生成，>5MB 轮转） |
+| `CLAUDE.md` | 项目说明与开发规范 |
+| `AGENTS.md` | 快速入口，指向 `CLAUDE.md` |
+| `models/` | 自动下载的 GGUF 模型（运行时生成，不提交） |
+| `bin/` | 自动下载的 llama.cpp 二进制（运行时生成，不提交） |
+| `cache.db` | SQLite 缓存数据库（运行时生成，不提交） |
+| `cache_hit.log` | 命中/未命中日志，超过 5MB 自动轮转（运行时生成，不提交） |
 
 ## 配置
 
@@ -120,10 +126,10 @@ embedding:
 | `pooling` | `auto` | `mean` / `cls` / `last` / `rank` / `auto`（auto = 用模型自带默认） |
 | `embd_normalize` | `2` | 2 = L2 归一化（余弦相似度用 2 即可） |
 
-> 💡 换模型后旧向量与新向量不可比较。代理会自动跳过由其他 embedding 模型生成的
+> **注意**：换模型后旧向量与新向量不可比较。代理会自动跳过由其他 embedding 模型生成的
 > 语义缓存条目（精确匹配不受影响），无需手动删库。若想彻底清空，删除 `cache.db`。
 >
-> ⚠️ 如果 8080 端口已有 llama-server 在跑，脚本会检查它加载的模型是否与配置一致；
+> **注意**：如果 8080 端口已有 llama-server 在跑，脚本会检查它加载的模型是否与配置一致；
 > 不一致时会提示你先停掉旧进程。
 
 ## GPU / CUDA 自动检测
@@ -158,7 +164,7 @@ CUDA 版 llama.cpp 的发布包**不含** CUDA 运行库，脚本会额外下载
 [2026-07-11 15:09:41] MISS | sim=N/A    | saved=~0 tokens   | query=UV-K5的Flash怎么烧
 ```
 
-## Protocol
+## 协议
 
 与 OpenAI-compatible API 完全兼容：
 
